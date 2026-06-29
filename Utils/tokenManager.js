@@ -1,7 +1,6 @@
 const axios = require("axios");
 
 let tokenData = { access: null, refresh: null, expiresAt: null };
-
 async function authenticate() {
   const res = await axios.post(
     `${process.env.PAYPACK_BASE_URL}/auth/agents/authorize`,
