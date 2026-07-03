@@ -19,7 +19,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: true,
+    origin: process.env.FRONTEND_URL || true,
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -27,7 +27,7 @@ const io = socketIo(server, {
 
 // Rest of your server configuration...
 app.use(cors({
-  origin: true,
+  origin: process.env.FRONTEND_URL || true,
   credentials: true
 }));
 
@@ -198,7 +198,7 @@ io.on("connection", (socket) => {
 // Make io accessible to routes
 app.set("io", io);
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`\x1b[32m%s\x1b[0m`, `🚀 Server running on port ${PORT}`);
   console.log(`\x1b[36m%s\x1b[0m`, `📡 Socket.io ready for connections`);

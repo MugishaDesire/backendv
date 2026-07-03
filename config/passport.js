@@ -2,13 +2,15 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const db = require("./db");
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
+
 // ── ADMIN Google Strategy ─────────────────────────────────────────────────────
 passport.use("google-admin",
   new GoogleStrategy(
     {
       clientID:     process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:  "http://localhost:5000/admin/auth/google/callback",
+      callbackURL:  `${BACKEND_URL}/admin/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -37,7 +39,7 @@ passport.use("google-user",
     {
       clientID:          process.env.GOOGLE_CLIENT_ID,
       clientSecret:      process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:       "http://localhost:5000/user/auth/google/callback",
+      callbackURL:       `${BACKEND_URL}/user/auth/google/callback`,
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {
