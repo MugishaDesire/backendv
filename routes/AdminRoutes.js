@@ -23,7 +23,7 @@ router.get("/auth/google",
 // GET /admin/auth/google/callback
 router.get("/auth/google/callback",
   passport.authenticate("google-admin", {
-    failureRedirect: "http://localhost:5173/login?error=not_authorized",
+    failureRedirect: "https://myshop-plum-six.vercel.app/login?error=not_authorized",
   }),
   (req, res) => {
     const admin = req.user;
@@ -31,7 +31,7 @@ router.get("/auth/google/callback",
       id: admin.id,
       email: admin.email,
     }));
-    res.redirect(`http://localhost:5173/auth/google/success?admin=${adminData}`);
+    res.redirect(`https://myshop-plum-six.vercel.app/auth/google/success?admin=${adminData}`);
   }
 );
 
