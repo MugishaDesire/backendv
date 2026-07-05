@@ -44,7 +44,7 @@ router.get("/auth/google", (req, res, next) => {
 });
 router.get("/auth/google/callback",
   passport.authenticate("google-user", {
-    failureRedirect: "http://localhost:5173/ulogin?error=google_failed",
+    failureRedirect: "https://myshop-plum-six.vercel.app/ulogin?error=google_failed",
   }), 
   (req, res) => {
     const user = req.user;
@@ -56,7 +56,7 @@ router.get("/auth/google/callback",
       phonenumber: user.phonenumber,
       role:        user.role,
     }));
-    res.redirect(`http://localhost:5173/auth/google/user-success?user=${userData}&appState=${encodeURIComponent(appState)}`);
+    res.redirect(`https://myshop-plum-six.vercel.app/auth/google/user-success?user=${userData}&appState=${encodeURIComponent(appState)}`);
   }
 );
 
