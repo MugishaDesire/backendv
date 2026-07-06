@@ -1,15 +1,7 @@
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const transporter = require("../config/mailer");
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 exports.login = async (req, res) => {

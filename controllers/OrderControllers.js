@@ -1,5 +1,5 @@
 const db = require("../config/db");
-const nodemailer = require("nodemailer");
+const transporter = require("../config/mailer");
 
 // ── Haversine formula ─────────────────────────────────────────────────────────
 function getDistanceMeters(lat1, lng1, lat2, lng2) {
@@ -584,10 +584,6 @@ exports.deleteOrder = async (req, res) => {
 // ── EMAIL HELPERS ─────────────────────────────────────────────────────────────
 async function sendDeliveryEmail(order) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-  });
   await transporter.sendMail({
     from:    `"MyShop" <${process.env.EMAIL_USER}>`,
     to:      order.cust_email,
@@ -617,10 +613,6 @@ async function sendDeliveryEmail(order) {
 
 async function sendOnTheWayEmail(order, courierName) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-  });
   await transporter.sendMail({
     from:    `"MyShop" <${process.env.EMAIL_USER}>`,
     to:      order.cust_email,
