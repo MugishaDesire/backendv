@@ -1,4 +1,8 @@
 require("dotenv").config();
+
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first"); // forces IPv4 — fixes Render ENETUNREACH for outbound connections (e.g. nodemailer)
+
 const express  = require("express");
 const cors     = require("cors");
 const session  = require("express-session");
@@ -159,34 +163,37 @@ io.on("connection", (socket) => {
   // Courier tapped "Start Delivery" — notify customer immediately
   socket.on("courier:started_delivery", async ({ courierId, orderId }) => {
     try {
-    // Look up the order to get user_id and courier name
-    const db = require("./config/db");
-    const [orders] = await db.query("SELECT * FROM orders WHERE id = ?", [orderId]);
-    if (!orders.length) return;
-    const order = orders[0];
+      // Look up the order to get user_id and courier name
+      const db = require("./config/db");
 
-    const [couriers] = await db.query(
-      "SELECT fullname FROM users WHERE id = ?", [courierId]
-    );
-    const courierName = couriers[0]?.fullname || "Your courier";
+      const orderResult = await db.query(
+        "SELECT * FROM orders WHERE id = $1", [orderId]
+      );
+      if (!orderResult.rows.length) return;
+      const order = orderResult.rows[0];
 
-    // Notify customer
-    if (order.user_id) {
-      io.to(`user_${order.user_id}`).emit("order:courier_on_way", {
+      const courierResult = await db.query(
+        "SELECT fullname FROM users WHERE id = $1", [courierId]
+      );
+      const courierName = courierResult.rows[0]?.fullname || "Your courier";
+
+      // Notify customer
+      if (order.user_id) {
+        io.to(`user_${order.user_id}`).emit("order:courier_on_way", {
+          orderId:     Number(orderId),
+          courierName,
+          message:     `${courierName} has started your delivery and is on the way! 🚚`,
+        });
+      }
+
+      // Also notify admin
+      io.to("admin").emit("order:delivery_started", {
         orderId:     Number(orderId),
+        courierId,
         courierName,
-        message:     `${courierName} has started your delivery and is on the way! 🚚`,
       });
-    }
 
-    // Also notify admin
-    io.to("admin").emit("order:delivery_started", {
-      orderId:     Number(orderId),
-      courierId,
-      courierName,
-    });
-
-    console.log(`🚚 Courier ${courierId} started delivery for order ${orderId}`);
+      console.log(`🚚 Courier ${courierId} started delivery for order ${orderId}`);
     } catch (err) {
       console.error("courier:started_delivery error:", err.message);
     }
