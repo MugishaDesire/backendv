@@ -1,7 +1,7 @@
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const transporter = require("../config/mailer");
+const resend = require("../config/mailer");
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 exports.login = async (req, res) => {
@@ -275,8 +275,8 @@ exports.forgotPassword = async (req, res) => {
 
     const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
 
-    await transporter.sendMail({
-      from: `"MyShop" <${process.env.EMAIL_USER}>`,
+    const { error } = await resend.emails.send({
+      from: "MyShop <onboarding@resend.dev>", // swap to your verified domain later
       to: user.email,
       subject: "Reset Your Password – MyShop",
       html: `
@@ -309,6 +309,13 @@ exports.forgotPassword = async (req, res) => {
         </div>
       `,
     });
+
+    if (error) {
+      console.error("Password reset email failed:", error);
+      return res.status(502).json({
+        message: "Could not send reset email right now. Please try again shortly.",
+      });
+    }
 
     res.status(200).json({
       message: "If this email is registered, a reset link has been sent.",

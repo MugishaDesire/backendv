@@ -15,7 +15,7 @@ async function sendOtp(adminId, email) {
   );
 
   const { error } = await resend.emails.send({
-    from: "Admin Panel <onboarding@resend.dev>", // swap to your verified domain later
+    from: "Admin Panel_myshop <onboarding@resend.dev>", // swap to your verified domain later
     to: email,
     subject: "Your login verification code",
     text: `Your OTP is: ${otp}\n\nIt expires in 10 minutes. Do not share it.`,
