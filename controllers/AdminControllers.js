@@ -22,12 +22,16 @@ async function sendOtp(adminId, email) {
     [hashedOtp, expiresAt, adminId]
   );
 
-  await transporter.sendMail({
-    from: `"Admin Panel" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: "Your login verification code",
-    text: `Your OTP is: ${otp}\n\nIt expires in 10 minutes. Do not share it.`,
-  });
+  const { error } = await resend.emails.send({
+  from: "Admin Panel <onboarding@resend.dev>", // resend.dev works instantly without domain verification, for testing
+  to: email,
+  subject: "Your login verification code",
+  text: `Your OTP is: ${otp}\n\nIt expires in 10 minutes. Do not share it.`,
+});
+
+if (error) {
+  throw new Error(`Failed to send OTP email: ${error.message}`);
+}
 }
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
