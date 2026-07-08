@@ -1,15 +1,7 @@
 const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const transporter = require("../config/mailer");
-
-// const transporter = nodemailer.createTransport({
-//   service: "gmail",
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASS,
-//   },
-// });
+const resend = require("../config/mailer");
 
 // ─── HELPER: generate & save OTP ─────────────────────────────────────────────
 async function sendOtp(adminId, email) {
@@ -23,15 +15,15 @@ async function sendOtp(adminId, email) {
   );
 
   const { error } = await resend.emails.send({
-  from: "Admin Panel <onboarding@resend.dev>", // resend.dev works instantly without domain verification, for testing
-  to: email,
-  subject: "Your login verification code",
-  text: `Your OTP is: ${otp}\n\nIt expires in 10 minutes. Do not share it.`,
-});
+    from: "Admin Panel <onboarding@resend.dev>", // swap to your verified domain later
+    to: email,
+    subject: "Your login verification code",
+    text: `Your OTP is: ${otp}\n\nIt expires in 10 minutes. Do not share it.`,
+  });
 
-if (error) {
-  throw new Error(`Failed to send OTP email: ${error.message}`);
-}
+  if (error) {
+    throw new Error(`Failed to send OTP email: ${error.message}`);
+  }
 }
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
@@ -54,7 +46,14 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    await sendOtp(admin.id, admin.email);
+    try {
+      await sendOtp(admin.id, admin.email);
+    } catch (emailErr) {
+      console.error("OTP email failed:", emailErr);
+      return res.status(502).json({
+        message: "Could not send verification code. Please try again in a moment.",
+      });
+    }
 
     return res.status(200).json({
       message: "OTP sent to your email",
