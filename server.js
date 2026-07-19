@@ -8,6 +8,7 @@ const cors     = require("cors");
 const session  = require("express-session");
 const passport = require("./config/passport");
 const http = require("http");
+const { generalLimiter, strictLimiter, readLimiter } = require("./middleware/rateLimiter");
 
 // Check if socket.io is installed, if not, show helpful error
 let socketIo;
@@ -28,6 +29,11 @@ const io = socketIo(server, {
     credentials: true
   }
 });
+
+// Trust Render's proxy so req.ip reflects the real client IP,
+// not the proxy — required for express-rate-limit to work per-user
+// instead of lumping all traffic together.
+app.set("trust proxy", 1);
 
 // Rest of your server configuration...
 app.use(cors({
@@ -50,21 +56,30 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Webhook MUST come before express.json()
+// Webhook MUST come before express.json() — and stays exempt from
+// rate limiting so Paypack's payment confirmations are never dropped.
 app.use("/api/payment", require("./routes/PaymentRoutes"));
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
-app.use("/products", require("./routes/ProductRoutes"));
+// General limiter applies as a baseline to every route below.
+// Individual routers can layer a stricter or looser limiter on top.
+app.use(generalLimiter);
+
+app.use("/products", readLimiter, require("./routes/ProductRoutes"));
 app.use("/orders",   require("./routes/OrderRoutes"));
-app.use("/admin",    require("./routes/AdminRoutes"));
-app.use("/user",     require("./routes/UserRoutes"));
+app.use("/admin",    strictLimiter, require("./routes/AdminRoutes"));
+app.use("/user",     strictLimiter, require("./routes/UserRoutes"));
 
 // ── Socket.io Connection Handling ──────────────────────────────
 io.on("connection", (socket) => {
   console.log(`🟢 New client connected: ${socket.id}`);
+
+  // Basic per-socket throttle for high-frequency events like location
+  // updates — express-rate-limit only covers HTTP, not Socket.io.
+  const lastEmit = new Map();
 
   // Courier joins their personal room
   socket.on("courier:join", (courierId) => {
@@ -80,6 +95,11 @@ io.on("connection", (socket) => {
 
   // Courier sends location update
   socket.on("courier:location", (data) => {
+    const now = Date.now();
+    const last = lastEmit.get("location") || 0;
+    if (now - last < 2000) return; // ignore updates faster than every 2s per courier
+    lastEmit.set("location", now);
+
     const { courierId, orderId, lat, lng } = data;
     console.log(`📍 Courier ${courierId} location update for order ${orderId}: [${lat}, ${lng}]`);
     

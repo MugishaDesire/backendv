@@ -11,11 +11,13 @@
   "author": "Mugisha Desire",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
     "axios": "^1.18.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.6.0",
     "express-session": "^1.19.0",
     "fs-extra": "^11.3.3",
     "jsonwebtoken": "^9.0.3",
